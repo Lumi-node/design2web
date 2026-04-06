@@ -1,0 +1,25 @@
+---
+title: "Design2Web: Turn any design into a fully functional web application auto"
+abstract: "Converts JSON design specs into runnable HTML/CSS/JS web apps."
+authors:
+  - name: "Andrew Young"
+    affiliation: "Automate Capture Research"
+publishedDate: 2026-04-05
+tags:
+  - Web Application Development
+  - Design to Code
+  - Automated Development
+  - Frontend/Backend Integration
+  - Prototyping
+status: published
+featured: false
+pdfUrl: "https://research.automate-capture.com/papers/RR-design2web-Young2026.pdf"
+---
+
+This iteration of Design2Web has been a fascinating deep dive into the intersection of declarative design and code generation. The core motivation behind this project stems from a persistent friction point in modern web development: the gap between visual design intent and functional code implementation. Designers often create beautiful mockups, but the translation layer into production-ready, semantic HTML/CSS/JS is often slow, manual, and prone to human error. We aimed to bridge this gap by creating a system that accepts a structured, machine-readable blueprint—a JSON specification—and outputs a fully functional, albeit simple, web application. Essentially, we are building a low-code/no-code compiler, where the design language is JSON and the target language is the web stack. The initial success in parsing complex structures like nested components (e.g., a `Card` containing a `Button` and an `Image`) from the JSON and mapping them to corresponding HTML tags has been very encouraging.
+
+Technically, the pipeline is quite linear but relies on robust parsing and templating logic. The `parse_design_spec` function is the ingestion engine; it needs to be resilient enough to handle variations in the JSON schema while extracting critical metadata: layout constraints (flexbox/grid definitions), component types (`button`, `card`, etc.), and style attributes (color codes, font families, padding values). Once the specification object is fully hydrated in memory, the `generate_html` function takes over. This function essentially acts as a recursive renderer. It iterates through the top-level structure defined in the JSON. For each component, it calls a specific rendering subroutine (e.g., `render_button(component_data)`). These subroutines are responsible for translating the abstract properties (like `backgroundColor: "#3498db"`) into concrete CSS inline styles or, ideally, into structured CSS classes that reference a generated stylesheet. The vanilla JavaScript generation is currently rudimentary—mostly handling basic event listeners defined in the spec—but the framework is in place to hook into more complex DOM manipulation logic later.
+
+The most significant learning curve has been managing the complexity inherent in abstraction. While the JSON is simple to write, ensuring that the generated output is *good* code, not just *functional* code, is challenging. For instance, if the spec dictates a "primary button," we want the generator to output `<button class="btn btn-primary">` rather than `<button style="background-color: blue;">`. This requires building a semantic mapping layer between the abstract design tokens (like "primary") and concrete CSS rules. A current limitation is the scope of interactivity; we are currently limited to simple click handlers defined in the JSON, whereas a real application would require state management, which is far beyond the scope of a static JSON-to-HTML compiler. Future work must focus heavily on a more sophisticated CSS generation engine, perhaps leveraging CSS-in-JS principles or generating component-based CSS modules.
+
+This project sits squarely within the broader research area of automated UI generation and visual programming. It echoes concepts found in tools like Webflow’s underlying logic or specialized design-to-code pipelines used in enterprise software. However, Design2Web is aiming for a highly constrained, deterministic transformation—a direct compiler from a simple DSL (JSON) to a target language (HTML/CSS/JS). The challenge isn't just translation; it's *interpretation*. We are trying to teach a machine the implicit rules of good UI design based on explicit, structured data. Moving forward, I want to investigate how to incorporate layout algorithms (like automatic grid placement based on component size ratios) directly into the generation phase, moving beyond simple sequential rendering.

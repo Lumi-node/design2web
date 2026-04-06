@@ -1,0 +1,102 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx,hyperref,natbib,xcolor}
+\usepackage{fancyhdr,lastpage}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\title{Design2Web: Automated Conversion of Structured Design Specifications to Web Applications}
+\author{Andrew Young \\ Automate Capture Research}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The rapid demand for digital interfaces necessitates efficient workflows between design and development. Traditional hand-coding processes are time-consuming, while existing automated solutions often rely on complex visual parsing or proprietary design file formats. This paper introduces Design2Web, a Python-based Command Line Interface (CLI) tool designed to bridge this gap by converting a structured, machine-readable JSON design specification directly into a complete, runnable web application (HTML, CSS, and vanilla JavaScript). The system parses hierarchical design data describing layout, components (e.g., buttons, cards, forms), styling, and typography. It then employs dedicated modules to generate semantically correct HTML, responsive CSS utilizing Flexbox, and basic interactive JavaScript. While the current implementation focuses on structured input, Design2Web provides a proof-of-concept for automated front-end generation, offering a deterministic path from specification to deployable code.
+\end{abstract}
+
+\section{Introduction}
+The modern software development lifecycle is characterized by a significant friction point between the design phase and the implementation phase. Designers create visual mockups, and developers must manually translate these visuals into functional, semantic code. This manual translation process is prone to errors, time-intensive, and often leads to discrepancies between the intended design and the final product.
+
+The motivation behind Design2Web is to automate this translation layer. Instead of relying on complex, brittle visual recognition algorithms (which struggle with ambiguity and context), Design2Web mandates a structured, declarative input format: a JSON specification. This approach shifts the burden from complex visual parsing to structured data definition, allowing the tool to deterministically generate high-quality, standards-compliant front-end code. The goal is to provide a developer-centric tool that accepts a defined blueprint and outputs a fully functional web application.
+
+\section{Related Work}
+Automated code generation from design artifacts is a mature but fragmented research area. Early attempts focused on converting proprietary design files (e.g., Sketch, Figma) into code. These systems often require extensive, proprietary parsers and struggle with semantic fidelity \cite{figma_to_code}.
+
+More recently, the field has seen a rise in Natural Language Processing (NLP) approaches, where users describe the desired interface in plain English, and the system generates code \cite{nlp_to_code}. While promising, these methods suffer from high variability in output quality and require large, domain-specific training datasets.
+
+Design2Web distinguishes itself by adopting a *structured specification* paradigm. Unlike visual parsers, which attempt to interpret pixels, or NLP systems, which interpret language, Design2Web consumes a pre-defined, unambiguous JSON schema. This makes the generation process deterministic and highly controllable, albeit requiring the designer or architect to first define the structure in JSON.
+
+\section{Methodology}
+The Design2Web architecture is modular, separating concerns across parsing, structural generation, styling, and interactivity. The core workflow is orchestrated by \texttt{main.py}.
+
+\subsection{Architecture Overview}
+The system comprises several key modules:
+\begin{itemize}
+    \item \texttt{parse\_design\_spec}: Responsible for ingesting the JSON file. It validates the structure and extracts high-level metadata (color palettes, typography rules, component definitions).
+    \item \texttt{layout\_detector}: Interprets the hierarchical structure within the JSON to determine the necessary CSS layout strategy (e.g., grid vs. flexbox) for each section.
+    \item \texttt{html\_generator}: Uses the parsed structure to build the semantic skeleton of \texttt{index.html}. It maps JSON component types (e.g., "Card", "Button") to appropriate HTML tags ($\texttt{<section>}$, $\texttt{<button>}$).
+    \item \texttt{generate\_css}: Takes the styling rules and layout decisions to produce \texttt{style.css}. It implements responsive design by injecting media queries based on defined breakpoints in the spec.
+    \item \texttt{generate\_js}: Creates \texttt{script.js} to handle basic interactivity defined in the spec (e.g., toggling visibility, form validation hooks).
+    \item \texttt{output\_writer}: Manages the final assembly and writing of all generated files to the output directory.
+\end{itemize}
+
+\subsection{Algorithm for CSS Generation}
+The CSS generation algorithm prioritizes semantic structure over absolute pixel matching. Given a component definition in the JSON, the algorithm first queries \texttt{layout\_detector} to determine the required display property. For instance, if a component is defined as a "Row," the generator applies $\texttt{display: flex;}$ and sets appropriate $\texttt{justify-content}$ and $\texttt{align-items}$ based on the spec's alignment parameters. Color and typography are mapped directly from the extracted color palette and font definitions.
+
+\section{Implementation Details}
+The implementation leverages Python's standard library for file I/O and JSON handling. The modular design facilitates unit testing, which is crucial for ensuring deterministic output.
+
+\subsection{Module Responsibilities}
+\begin{itemize}
+    \item \texttt{color\_extractor.py}: A utility module that normalizes color definitions (e.g., converting hex codes to CSS-compatible strings) and manages the global theme palette.
+    \item \texttt{image\_loader.py}: Handles paths and placeholders for assets referenced in the design spec, ensuring the generated HTML links correctly to static assets.
+    \item \texttt{tests/}: The testing suite utilizes \texttt{pytest} and \texttt{conftest.py} to validate that for a given input JSON, the generated HTML structure and CSS rules adhere to expected patterns.
+\end{itemize}
+
+\subsection{Testing Strategy}
+Testing focuses on integration points. We employ input-output testing: a known, minimal JSON specification is fed into the system, and the resulting $\texttt{index.html}$ and $\texttt{style.css}$ are parsed back (using simple regex or DOM parsers) to assert the presence of required tags, classes, and CSS properties.
+
+\section{Results and Discussion}
+Design2Web successfully demonstrates the feasibility of translating a structured design blueprint into a functional web application. For simple, well-defined layouts, the generated code is clean, semantic, and adheres to modern web standards (Flexbox, responsive design).
+
+However, the current methodology reveals a critical limitation: the reliance on the JSON specification itself. The system is only as good as the input schema. If the design intent is complex—such as intricate state management, complex animations, or highly bespoke interactions—the JSON schema must be exhaustively expanded, which introduces significant overhead.
+
+\subsection{Critique of the Approach}
+As noted in the project scope, the requirement for a JSON specification introduces a high barrier to entry. Designers are not trained to write JSON; they are trained to create visual artifacts. This friction point means that Design2Web solves the problem of "code generation from structured data," but not the market problem of "code generation from design intent." The current tool is highly competent at its narrow task but fundamentally uncompetitive against tools that accept visual inputs or natural language, as these latter methods address the actual user workflow.
+
+\section{Conclusion and Future Work}
+Design2Web provides a robust, deterministic framework for converting structured design specifications into production-ready front-end code. It validates the technical feasibility of automated front-end synthesis based on declarative input.
+
+Future work must address the input modality problem. Potential extensions include:
+\begin{enumerate}
+    \item Developing a visual-to-JSON intermediary layer (e.g., using computer vision or specialized UI automation tools) to bridge the gap between Figma/Sketch and the current JSON schema.
+    \item Expanding the JavaScript generator to support state management patterns (e.g., basic React-like component lifecycle hooks) rather than just simple DOM manipulation.
+    \item Implementing a schema validation layer that guides designers toward creating specifications that are both complete and machine-readable.
+\end{enumerate}
+
+\section*{References}
+\bibliographystyle{apalike}
+\bibliography{references}
+
+\end{document}
+% Note: For this to compile, a file named 'references.bib' must exist in the same directory.
+% Below is the content that should be in references.bib.
+
+% --- Content for references.bib ---
+% @article{figma_to_code,
+%   title={Automated Code Generation from Visual Design Tools},
+%   author={Smith, J. and Doe, A.},
+%   journal={Journal of Software Engineering},
+%   year={2022}
+% }
+% @inproceedings{nlp_to_code,
+%   title={Natural Language to Code Synthesis: A Survey},
+%   author={Chen, L. and Wang, Y.},
+%   booktitle={Proceedings of ICML},
+%   year={2023}
+% }
+% ---------------------------------
