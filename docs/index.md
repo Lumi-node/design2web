@@ -1,84 +1,66 @@
 # Design2Web
 
-![Logo Placeholder](assets/logo.svg)
+## 🎨 Turn Pixels into Code
 
-# 🚀 Design2Web: From JSON Specs to Live Web Apps
-
-Design2Web is a powerful Python CLI tool that bridges the gap between design specification and functional web code. Stop manually translating design mockups into HTML/CSS. Simply provide a structured JSON file describing your layout, components, and styling, and watch Design2Web generate a complete, runnable, and semantic HTML, CSS, and vanilla JavaScript web application.
+Design2Web is a powerful Python tool that bridges the gap between design and development. Stop manually recreating static mockups! Design2Web automatically analyzes your PNG or JPG design files and generates a minimal, runnable HTML and CSS web page from them.
 
 ---
 
-## ✨ Key Features
+## ✨ Features
 
-Design2Web transforms abstract design concepts into tangible, production-ready code with ease.
+We transform static visuals into functional web structures with intelligent analysis:
 
-::: grid
-::: col-span-1
-::: card
-### 🎨 Component Abstraction
-Define complex UI elements like Buttons, Cards, Forms, and Navbars using simple JSON structures.
-:::
-::: col-span-1
-::: card
-### 📐 Style & Layout Control
-Specify colors, spacing, and typography directly in your JSON. We translate these into clean, modern CSS using Flexbox for robust layout.
-:::
-::: col-span-1
-::: card
-### 🐍 Python CLI Driven
-Built as a straightforward Python command-line interface (`main.py`), making integration into automated workflows seamless.
-:::
-::: col-span-1
-::: card
-### 🌐 Vanilla & Semantic Output
-Generates pure HTML5 and CSS3 without heavy frameworks, ensuring fast load times and excellent accessibility.
-:::
-::: grid
+:::tip
+**Intelligent Conversion**
+Our core engine uses basic image processing to detect major UI regions—like headers, sidebars, and footers—allowing us to structure the output HTML semantically.
 :::
 
-## 🛠️ How It Works
+:::grid
+:::card
+**🖼️ Image Ingestion**
+Supports standard image formats (PNG, JPG) as the sole input for the conversion process.
+:::
+:::card
+**🌈 Color Extraction**
+Automatically samples and extracts dominant color palettes from detected regions, ensuring visual fidelity in the generated CSS.
+:::
+:::card
+**🚀 Minimal Output**
+Generates clean, runnable HTML and CSS files, perfect for rapid prototyping and proof-of-concept builds.
+:::
+:::card
+**🧩 Layout Detection**
+Uses basic edge and color analysis to segment the image into logical UI components (Header, Content, Footer, etc.).
+:::
+:::
+---
 
-The process is elegantly simple:
+## 🚀 Quick Start
 
-1. **Define:** Create a JSON file detailing your desired application structure, components, and styles.
-2. **Run:** Execute the tool from your terminal: `python main.py --spec your_design.json`
-3. **Deploy:** Design2Web outputs `index.html` and `style.css`, ready to be served instantly.
+Ready to see your design come to life? Installation is straightforward.
 
-### Core Functions
-
-Our tool is built around these core capabilities:
-
-*   **`parse_design_spec(json_file)`**: Intelligently reads and interprets the structure, components, colors, and typography defined in your JSON input.
-*   **`generate_html(spec)`**: Constructs a clean, semantic `index.html` file, mapping JSON components to appropriate HTML tags.
-*   **`generate_css(spec)`**: Generates a comprehensive `style.css` file, utilizing Flexbox for responsive and predictable styling based on your specifications.
-
-## ⚡ Quick Start
-
-Ready to turn your designs into code?
-
-First, ensure you have Python installed. Then, clone the repository and install dependencies (if any).
+Use pip to install the necessary dependencies:
 
 ```bash
-git clone https://github.com/yourusername/design2web.git
-cd design2web
-pip install -r requirements.txt
+pip install design2web
 ```
 
-### Run Your First Conversion
-
-Create a sample JSON file (e.g., `my_app.json`) and run:
+To convert your first mockup, run the main entry point:
 
 ```bash
-python main.py --spec my_app.json
+python main.py path/to/your/mockup.png
 ```
 
-This will instantly generate `index.html` and `style.css` in your directory!
-
-## ➡️ Get Started
-
-Dive deeper into the documentation to learn the exact JSON schema required for maximum control.
-
-[View the Full API Reference and Schema Documentation](./api_reference.md)
+This command will output the path to your newly generated HTML file!
 
 ---
-*Design2Web: Specify. Generate. Deploy.*
+
+## 🗺️ Getting Started
+
+Dive deeper into how Design2Web works, explore advanced configuration options, and see detailed examples of the layout detection algorithms.
+
+[➡️ Read the Full Documentation](docs/getting_started.md)
+
+---
+
+*Design2Web: From Mockup to Markup.*

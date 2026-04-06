@@ -1,81 +1,71 @@
 # Architecture: Design2Web
 
-Design2Web is a command-line interface (CLI) tool designed to automate the conversion of structured design specifications (provided in JSON format) into fully functional, static web applications (HTML, CSS, and basic JavaScript). Its primary goal is to bridge the gap between design intent and front-end code generation, allowing designers and developers to rapidly prototype and generate boilerplate web structures.
-
 ## System Overview
 
-The system operates as a pipeline, taking a single JSON input file and orchestrating several specialized modules to produce a complete set of static assets. The core logic flows from parsing the abstract design specification, through layout and styling analysis, culminating in the generation of structured HTML and corresponding CSS. Testing is handled via a dedicated `tests/` directory, ensuring the integrity of the conversion process.
+Design2Web is a Python-based utility designed to automate the initial conversion of a static, high-fidelity design mockup (PNG or JPG) into a functional, minimal HTML and CSS web page. The core objective is to bridge the gap between visual design assets and front-end code structure. The system analyzes the input image to infer structural elements (like headers, sidebars, and main content areas) and extract the dominant color palette, which is then used to generate semantic HTML and corresponding inline or embedded CSS.
 
-## Module Diagram
+## Module Relationships
 
-The following Mermaid diagram illustrates the dependencies and flow between the primary components of Design2Web.
+The following diagram illustrates the dependencies and flow between the primary components of the Design2Web system.
 
 ```mermaid
 graph TD
-    A[main.py] --> B(parse_design_spec);
-    B --> C{types.py};
-    B --> D[layout_detector.py];
-    B --> E[color_extractor.py];
-    B --> F[image_loader.py];
-    D --> G[html_generator.py];
-    E --> H[generate_css];
-    F --> G;
-    G --> I[output_writer.py];
-    H --> I;
-    I --> J[index.html];
-    I --> K[style.css];
+    A[main.py] --> B(image_loader.py);
+    A --> C(layout_detector.py);
+    A --> D(color_extractor.py);
+    C --> E(types.py);
+    D --> E;
+    B --> E;
+    C --> F(html_generator.py);
+    D --> F;
+    F --> G(output_writer.py);
+    A --> G;
 
     subgraph Core Logic
-        B
+        C
         D
-        E
         F
-        G
-        H
     end
 
-    subgraph Infrastructure
-        A
-        I
+    subgraph Utilities & I/O
+        B
+        G
     end
 
     subgraph Data Structures
-        C
+        E
     end
 
     subgraph Testing
-        T1[tests/__init__.py]
-        T2[tests/conftest.py]
-        T3[tests/fixtures/__init__.py]
+        H[tests/conftest.py]
+        I[tests/fixtures/__init__.py]
+        J[tests/__init__.py]
     end
+
+    H --> J
+    I --> J
 ```
 
 ## Module Descriptions
 
-| Module | Role | Key Responsibilities |
+| Module | Role | Dependencies |
 | :--- | :--- | :--- |
-| **`main.py`** | **Entry Point & Orchestrator** | Initializes the CLI, reads command-line arguments, and manages the high-level execution flow by calling the parsing, detection, and generation modules in sequence. |
-| **`types.py`** | **Data Contract Definition** | Defines the core data structures (Pydantic models or dataclasses) used throughout the application to ensure type safety when handling the design specification and intermediate data. |
-| **`parse_design_spec(json_file)`** | **Input Handler** | Reads the raw JSON file, validates its structure against the defined types, and transforms the raw data into a standardized, usable internal specification object. |
-| **`color_extractor.py`** | **Styling Analysis** | Scans the parsed specification to extract all defined color palettes, hex codes, and semantic color variables, preparing them for CSS generation. |
-| **`layout_detector.py`** | **Structural Analysis** | Interprets the layout definitions (e.g., grid, flex properties) from the spec to determine the necessary CSS classes and structural hierarchy required for the HTML. |
-| **`image_loader.py`** | **Asset Management** | Handles paths and references to external assets (images, fonts) specified in the design, ensuring they are correctly referenced in the final HTML. |
-| **`html_generator.py`** | **Structure Generation** | Takes the processed specification and layout data to construct the semantic HTML markup (`index.html`), including placeholders for components (buttons, cards, etc.). |
-| **`generate_css(spec)`** | **Style Generation** | Uses the extracted colors and layout rules to generate the complete, production-ready CSS file (`style.css`), heavily leveraging Flexbox and CSS variables. |
-| **`output_writer.py`** | **Persistence Layer** | Responsible for taking the generated HTML and CSS strings and writing them to the specified output directory, creating the final runnable web package. |
-| **`tests/`** | **Testing Suite** | Contains unit and integration tests. `conftest.py` manages fixtures, and the module ensures that the conversion logic is robust against various valid and invalid inputs. |
+| **`main.py`** | **Entry Point & Orchestrator.** Contains the primary `convert_design(image_path)` function. It manages the overall workflow: loading the image, passing it sequentially through the detection and extraction modules, and finally triggering the HTML generation and writing process. | `image_loader`, `layout_detector`, `color_extractor`, `html_generator`, `output_writer` |
+| **`image_loader.py`** | **Input Handler.** Responsible for safely reading and decoding the input image file (PNG/JPG) into a usable image object (e.g., NumPy array or PIL Image object) for subsequent processing. | `types` |
+| **`layout_detector.py`** | **Structural Analysis.** Implements algorithms (e.g., basic edge detection, region segmentation based on contrast/color variance) to identify and delineate major UI components within the image (Header, Sidebar, Content, Footer). | `types` |
+| **`color_extractor.py`** | **Palette Sampling.** Takes image regions or the whole image and applies clustering or sampling techniques to determine the set of dominant, representative colors for the design. | `types` |
+| **`html_generator.py`** | **Code Synthesis.** Takes the structural data (from `layout_detector`) and the color palette (from `color_extractor`) to construct the raw HTML string, including necessary semantic tags and inline/embedded CSS rules. | `types` |
+| **`output_writer.py`** | **Persistence Layer.** Handles the final step of writing the generated HTML content string into a specified file path, ensuring the output is correctly formatted and saved. | None |
+| **`types.py`** | **Data Contracts.** Defines all core data structures (e.g., `LayoutMap`, `ColorPalette`, `ImageObject`) used across the system to ensure type safety and clear data exchange between modules. | None |
+| **`tests/`** | **Testing Suite.** Contains unit and integration tests to validate the functionality of each module independently and collectively. | N/A |
 
 ## Data Flow Explanation
 
-The process follows a strict, unidirectional data flow:
+The conversion process follows a strict, sequential pipeline orchestrated by `main.py`:
 
-1. **Initialization (`main.py`):** The process begins in `main.py`, which accepts the path to the design JSON file.
-2. **Parsing & Validation:** `main.py` calls `parse_design_spec()`. This function reads the JSON and validates it against the schema defined in `types.py`, producing a standardized **Design Specification Object**.
-3. **Analysis Phase:** The Design Specification Object is then passed to specialized analysis modules:
-    * `color_extractor.py` extracts styling data.
-    * `layout_detector.py` interprets structural rules.
-    * `image_loader.py` resolves asset paths.
-4. **Generation Phase:** The enriched specification is fed into the generation modules:
-    * `html_generator.py` uses the structural data to build the raw HTML string.
-    * `generate_css()` uses the styling data to build the raw CSS string.
-5. **Output:** Finally, `output_writer.py` receives the generated HTML and CSS strings and writes them to the filesystem, completing the conversion pipeline.
+1. **Initialization (`main.py` $\rightarrow$ `image_loader.py`):** The process begins when `main.py` calls `image_loader.load_image(path)`. This module reads the raw image file and returns a standardized `ImageObject` (defined in `types.py`).
+2. **Analysis Phase (Parallel/Sequential):**
+    * **Layout Detection:** The `ImageObject` is passed to `layout_detector.detect_layout_regions()`. This module analyzes the image structure and returns a `LayoutMap` detailing the coordinates and type of each UI region.
+    * **Color Extraction:** Simultaneously or subsequently, the `ImageObject` is passed to `color_extractor.extract_colors()`. This module samples the image and returns a `ColorPalette` object.
+3. **Synthesis Phase (`main.py` $\rightarrow$ `html_generator.py`):** The orchestrator gathers the results—the `LayoutMap` and the `ColorPalette`—and passes both to `html_generator.generate_html()`. This module uses this metadata to construct the final, structured HTML string, embedding CSS rules derived from the palette and applying structural classes based on the layout map.
+4. **Finalization (`main.py` $\rightarrow$ `output_writer.py`):** The resulting HTML string is passed to `output_writer.write_file(html_content, output_path)`. This module handles the file I/O, completing the conversion and returning the path to the newly created HTML file.

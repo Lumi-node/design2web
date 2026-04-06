@@ -1,150 +1,135 @@
 # Design2Web Quick Start Guide
 
-Welcome to Design2Web! This tool transforms a structured JSON design specification into a complete, runnable HTML, CSS, and JavaScript web application.
+Design2Web is a Python tool designed to automate the conversion of a static design mockup image (PNG/JPG) into a minimal, runnable HTML and CSS web page.
 
-## 🚀 Overview
+## 🚀 Installation
 
-Design2Web is a Python CLI utility designed to bridge the gap between design specifications and front-end code. It reads a JSON file defining layout, components, and styles, and outputs the necessary static web assets (`index.html`, `style.css`, etc.).
+Assuming you have Python installed, you can install the package:
 
-**Core Modules:**
-*   `main.py`: The entry point for the CLI.
-*   `types.py`: Defines the expected data structures for the design spec.
-*   `parse_design_spec`: Handles reading and validating the input JSON.
-*   `layout_detector`: Interprets the layout structure defined in the spec.
-*   `html_generator`: Constructs the semantic HTML structure.
-*   `generate_css`: Generates the accompanying CSS, utilizing Flexbox for layout.
-*   `image_loader`: Manages paths and references for assets.
-*   `output_writer`: Writes the generated files to the target directory.
+```bash
+pip install design2web
+```
 
-## 🛠️ Installation & Setup
+## 🧩 Module Overview
 
-Since this is a package structure, assume you have the necessary dependencies installed (e.g., `pip install -r requirements.txt`).
+The tool is composed of several specialized modules:
 
-To run the tool, you will execute `main.py` from your terminal, passing the path to your design specification JSON file.
+*   `main.py`: The primary entry point, containing the `convert_design` function.
+*   `image_loader.py`: Handles reading and processing the input image file.
+*   `layout_detector.py`: Analyzes the image to segment different UI areas (e.g., header, content).
+*   `color_extractor.py`: Samples and extracts dominant color palettes from detected regions.
+*   `html_generator.py`: Constructs the final HTML and CSS structure based on the analysis.
+*   `output_writer.py`: Saves the generated HTML file to the filesystem.
+*   `types.py`: Defines shared data structures used across the modules.
 
 ## ⚙️ Usage Guide
 
-The primary workflow involves:
-1.  Creating a JSON file that adheres to the structure defined in `types.py`.
-2.  Running `main.py` against that file.
+The core functionality is exposed through the `main.py` module. You will use the `convert_design` function, passing the path to your mockup image.
 
-### Step 1: Define Your Design Specification (JSON)
+### Prerequisites
 
-Your JSON file must describe the overall structure, colors, and individual components.
+Ensure you have a static design mockup image (e.g., `mockup.png`) ready to process.
 
-**Example Structure Snippet:**
+### Basic Workflow
 
-```json
-{
-  "metadata": {
-    "title": "My Awesome Webpage",
-    "base_font": "Arial, sans-serif"
-  },
-  "colors": {
-    "primary": "#007bff",
-    "background": "#f8f9fa",
-    "text_dark": "#333333"
-  },
-  "layout": {
-    "type": "flex-row",
-    "children": [
-      {"component": "navbar", "id": "main-nav"},
-      {"component": "content_area", "id": "main-content"}
-    ]
-  },
-  "components": {
-    "navbar": {
-      "type": "navbar",
-      "items": ["Home", "About", "Contact"]
-    },
-    "content_area": {
-      "type": "card",
-      "content": "Welcome to the site!",
-      "style": {
-        "padding": "20px",
-        "shadow": "0 4px 8px rgba(0,0,0,0.1)"
-      }
-    }
-  }
-}
-```
-
-### Step 2: Run the Conversion
-
-Use the `main.py` entry point to process the file.
-
-```bash
-python main.py --input ./design_spec.json --output ./dist
-```
-
-This command tells the tool:
-*   Read the specification from `design_spec.json`.
-*   Write all generated files (HTML, CSS, etc.) into the `dist/` directory.
+1.  **Load Image**: `image_loader.load_image(path)`
+2.  **Detect Layout**: `layout_detector.detect_layout_regions(image)`
+3.  **Extract Colors**: `color_extractor.extract_colors(image)`
+4.  **Generate & Write**: `main.convert_design(path)`
 
 ---
 
-## 💡 Real Usage Examples
+## 💡 Usage Examples
 
-Here are three scenarios demonstrating how different parts of the specification drive the output.
+Here are three examples demonstrating how to use Design2Web in different scenarios.
 
-### Example 1: Simple Landing Page (Focus on Layout & Color)
+### Example 1: Simple Conversion (Standard Use Case)
 
-**Goal:** Create a page with a centered header and a primary call-to-action button.
+This is the most common use case: taking a single image and generating a complete HTML file.
 
-**Input JSON Snippet Focus:**
-The `layout` section dictates the overall container structure, and the `colors` section feeds into `style.css`.
+```python
+import os
+from design2web.main import convert_design
 
-**Code Execution:**
-```bash
-python main.py --input ./landing_spec.json --output ./site_v1
+# Define the path to your design mockup
+MOCKUP_PATH = "assets/my_landing_page.png"
+OUTPUT_FILENAME = "output/landing_page.html"
+
+try:
+    # Run the conversion process
+    generated_file_path = convert_design(MOCKUP_PATH)
+    
+    print(f"✅ Success! Design converted.")
+    print(f"Output saved to: {generated_file_path}")
+
+except FileNotFoundError:
+    print(f"❌ Error: Mockup image not found at {MOCKUP_PATH}")
+except Exception as e:
+    print(f"❌ An unexpected error occurred during conversion: {e}")
 ```
 
-**Expected Output:**
-*   `site_v1/index.html`: Contains a `<div class="container">` styled using Flexbox to center content.
-*   `site_v1/style.css`: Contains rules like `body { background-color: #f8f9fa; }` and `.btn-primary { background-color: #007bff; }`.
+### Example 2: Inspecting Intermediate Results (Advanced Debugging)
 
-### Example 2: Complex Form Component (Focus on Component Generation)
+If you need to see *what* the tool detected before generating the final HTML, you can manually chain the functions. This is useful for debugging layout detection or color sampling.
 
-**Goal:** Generate a fully structured form component using the `form` type.
+```python
+from design2web.image_loader import load_image
+from design2web.layout_detector import detect_layout_regions
+from design2web.color_extractor import extract_colors
+import numpy as np # Assuming image processing uses numpy arrays
 
-**Input JSON Snippet Focus:**
-The `components` section defines a `form` object, specifying inputs and labels.
+MOCKUP_PATH = "assets/dashboard_mockup.jpg"
 
-**Code Execution:**
-```bash
-python main.py --input ./form_spec.json --output ./form_app
+# 1. Load the image
+design_image = load_image(MOCKUP_PATH)
+
+# 2. Detect regions (e.g., returns a dictionary of bounding boxes)
+regions = detect_layout_regions(design_image)
+print("\n--- Detected Layout Regions ---")
+print(regions)
+
+# 3. Extract colors from the main content area (assuming 'content' is a key)
+if 'content' in regions:
+    content_region = regions['content']
+    dominant_colors = extract_colors(design_image, region=content_region)
+    print("\n--- Extracted Dominant Colors ---")
+    print(dominant_colors)
 ```
 
-**Expected Output:**
-*   `form_app/index.html`: Will contain semantic `<form>` tags, `<label>` elements, and `<input>` fields, correctly nested according to the spec.
-*   `form_app/style.css`: Will include specific styling for form elements (e.g., input borders, label alignment) generated by `generate_css`.
+### Example 3: Batch Processing Multiple Designs
 
-### Example 3: Dynamic Content Integration (Focus on JavaScript/Image Loading)
+To process an entire directory of mockups, you can wrap the `convert_design` function in a loop.
 
-**Goal:** Build a card component that loads an image dynamically.
+```python
+import os
+from design2web.main import convert_design
 
-**Input JSON Snippet Focus:**
-The `card` component definition includes an `image_url` property, which `image_loader.py` processes.
+INPUT_DIR = "mockups_to_convert"
+OUTPUT_DIR = "generated_htmls"
 
-**Code Execution:**
-```bash
-python main.py --input ./gallery_spec.json --output ./gallery_viewer
+# Ensure output directory exists
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+print(f"🔍 Starting batch conversion from {INPUT_DIR}...")
+
+for filename in os.listdir(INPUT_DIR):
+    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+        input_path = os.path.join(INPUT_DIR, filename)
+        
+        # Create a clean output name
+        base_name = os.path.splitext(filename)[0]
+        output_path = os.path.join(OUTPUT_DIR, f"{base_name}.html")
+        
+        print(f"Processing {filename}...")
+        
+        try:
+            # Convert and overwrite the default output path if necessary, 
+            # or modify convert_design to accept an output path argument.
+            # For this example, we assume convert_design handles naming based on input.
+            final_path = convert_design(input_path)
+            print(f"  -> Saved successfully to {final_path}")
+        except Exception as e:
+            print(f"  -> FAILED to process {filename}: {e}")
+
+print("\n✨ Batch conversion complete.")
 ```
-
-**Expected Output:**
-*   `gallery_viewer/index.html`: The card structure will include an `<img>` tag whose `src` attribute is correctly populated by `image_loader.py` based on the provided path in the JSON.
-*   `gallery_viewer/script.js` (Generated): If the spec requires interactivity, `main.py` will trigger JS generation, potentially using vanilla JS to handle image loading or component initialization.
-
----
-
-## 📚 Module Reference
-
-| Module | Primary Responsibility | Key Function |
-| :--- | :--- | :--- |
-| `main.py` | CLI orchestration and execution flow. | `main()` |
-| `parse_design_spec` | Reading and validating the input JSON. | `parse_design_spec(json_file)` |
-| `layout_detector` | Determining the structural hierarchy. | `detect_layout(spec)` |
-| `html_generator` | Building the final HTML string. | `generate_html(spec)` |
-| `generate_css` | Creating the stylesheet, prioritizing Flexbox. | `generate_css(spec)` |
-| `image_loader` | Resolving and preparing asset paths. | `load_assets(spec)` |
-| `output_writer` | Saving all generated files to disk. | `write_files(files

@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [project]
 name = "design2web"
 version = "0.1.0"
-description = "Converts JSON design specs into runnable HTML/CSS/JS web apps."
+description = "Converts static design mockups (PNG/JPG) into runnable HTML/CSS web pages."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
     { name = "Andrew Young", email = "research@automate-capture.com" },
 ]
-keywords = ["web-generation", "cli", "frontend", "json-to-code", "automation"]
+keywords = ["web-generation", "ui-to-code", "design-to-html", "ai-design", "frontend"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",

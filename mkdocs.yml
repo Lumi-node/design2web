@@ -1,6 +1,6 @@
 site_name: Design2Web
 site_url: https://lumi-node.github.io/design2web/
-site_description: "Converts JSON design specs into runnable HTML/CSS/JS web apps."
+site_description: "Converts static design mockups (PNG/JPG) into runnable HTML/CSS web pages."
 site_author: Andrew Young
 repo_url: https://github.com/Lumi-node/design2web
 repo_name: Lumi-node/design2web

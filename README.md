@@ -5,156 +5,133 @@
 <h1 align="center">Design2Web</h1>
 
 <p align="center">
-  <strong>Convert structured JSON design specifications into runnable web applications.</strong>
+  <strong>Converting static design mockups into runnable HTML/CSS web pages.</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/Lumi-node/design2web"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License Badge"></a>
   <a href="https://github.com/Lumi-node/design2web"><img src="https://img.shields.io/badge/Python-3.10%2B-blue.svg" alt="Python Version Badge"></a>
-  <a href="https://github.com/Lumi-node/design2web"><img src="https://img.shields.io/badge/Tests-8%20Files-green.svg" alt="Test Count Badge"></a>
+  <a href="https://github.com/Lumi-node/design2web"><img src="https://img.shields.io/badge/Tests-8%20Tests-green.svg" alt="Test Count Badge"></a>
 </p>
 
 ---
 
-Design2Web is a tool designed to bridge the gap between design specifications and front-end code. It takes a structured JSON file—detailing layout, components (like buttons, cards, and navigation bars), color palettes, and typography—and automatically generates a complete, runnable web application consisting of `index.html`, `style.css`, and `script.js`.
+Design2Web is a proof-of-concept Python tool designed to automate the tedious process of translating static visual design mockups (PNG or JPG) into functional, albeit minimal, HTML and CSS code. It attempts to infer the structural layout of a design by analyzing image characteristics such as color distribution and edge detection.
 
-This project aims to automate the tedious process of translating design intent into boilerplate code, allowing developers to rapidly prototype or deploy applications based on pre-defined structural data.
+This project serves as an exploration into the feasibility of raster-to-code conversion using basic computer vision techniques. While it demonstrates the core pipeline—from image loading to HTML generation—it highlights the architectural challenges of inferring semantic structure from unstructured visual data.
 
 ---
 
 ## Quick Start
 
-First, ensure you have Python 3.10 or newer installed.
+First, ensure you have Python 3.10 or newer installed. Then, install the necessary dependencies:
 
 ```bash
 pip install design2web
 ```
 
-To use the core functionality, you would typically feed it a design specification file:
+To convert a design mockup, you would typically use the main entry point function:
 
 ```python
-from design2web.main import parse_design_spec, generate_html, generate_css, generate_js
+from design2web.main import convert_design
 
-# Assuming 'design_spec.json' exists and is valid
-spec = parse_design_spec('design_spec.json')
-
-# Generate the necessary files
-html_content = generate_html(spec)
-css_content = generate_css(spec)
-js_content = generate_js(spec)
-
-# In a real CLI, these would be written to disk by output_writer.py
-print("HTML Generated.")
-print("CSS Generated.")
-print("JS Generated.")
+# Assuming 'mockup.png' is your design file
+output_path = convert_design("mockup.png")
+print(f"HTML generated successfully at: {output_path}")
 ```
 
 ## What Can You Do?
 
-### Parse Design Specifications
-The `parse_design_spec` function reads a complex JSON structure. It interprets sections, component definitions, color codes, and spacing rules to build an internal, usable representation of the intended design.
+### Layout Detection
+The tool analyzes the input image to segment major UI components (e.g., header, sidebar, content area) using basic image processing techniques.
 
 ```python
-from design2web.main import parse_design_spec
-# Reads the JSON file and returns a structured object
-design_data = parse_design_spec('my_app_design.json')
+from design2web.layout_detector import detect_layout_regions
+from PIL import Image
+
+img = Image.open("design.jpg")
+regions = detect_layout_regions(img)
+# regions might contain bounding boxes for detected areas
 ```
 
-### Generate Semantic HTML
-`generate_html` takes the parsed specification and outputs a fully structured `index.html`. It maps design components (e.g., a 'card' component) to appropriate semantic HTML tags.
+### Color Extraction
+It samples dominant color palettes from the identified regions to apply them as CSS variables in the generated output.
 
 ```python
-from design2web.main import generate_html
-html_output = generate_html(design_data)
-# html_output now contains the complete HTML string
+from design2web.color_extractor import extract_colors
+from PIL import Image
+
+img = Image.open("design.jpg")
+palette = extract_colors(img)
+print(f"Extracted Palette: {palette}")
 ```
 
-### Generate Responsive CSS
-`generate_css` translates the styling rules from the JSON into production-ready CSS. It heavily utilizes Flexbox for layout and includes basic responsive breakpoints based on the spec.
+### HTML Generation
+Based on the detected regions and extracted colors, the system constructs a semantic HTML structure, wrapping components in appropriate `div` elements.
 
 ```python
-from design2web.main import generate_css
-css_output = generate_css(design_data)
-# css_output contains the complete style.css content
-```
+from design2web.html_generator import generate_html_structure
 
-### Generate Basic JavaScript Interactivity
-`generate_js` creates a `script.js` file containing basic functionality hooks defined in the design spec, such as event listeners for buttons or form validation placeholders.
-
-```python
-from design2web.main import generate_js
-js_output = generate_js(design_data)
-# js_output contains the script.js content
+# Assuming 'regions' from layout detection
+html_content = generate_html_structure(regions)
+# html_content is the raw HTML string
 ```
 
 ## Architecture
 
-The system follows a clear pipeline architecture. The process begins with the **`main.py`** entry point, which orchestrates the workflow.
+The system follows a sequential pipeline architecture:
 
-1.  **Input Layer:** **`parse_design_spec`** (in `main.py`) reads the raw JSON file.
-2.  **Data Transformation:** The parsed data is passed through various modules:
-    *   **`layout_detector.py`**: Interprets spatial relationships and component placement.
-    *   **`color_extractor.py`**: Normalizes and extracts the defined color palette.
-    *   **`image_loader.py`**: Handles paths and metadata for assets referenced in the spec.
-3.  **Output Generation:** The processed data is fed into the rendering modules:
-    *   **`html_generator.py`**: Creates the structural markup.
-    *   **`generate_css`** (in `main.py`): Creates the styling rules.
-    *   **`generate_js`** (in `main.py`): Creates the behavioral scripts.
-4.  **Finalization:** **`output_writer.py`** handles writing the generated strings into the final file structure (`index.html`, `style.css`, etc.).
+1.  **`image_loader.py`**: Handles reading and preprocessing the input raster image.
+2.  **`layout_detector.py`**: Takes the image and applies algorithms (e.g., brightness/edge analysis) to segment the image into logical UI regions.
+3.  **`color_extractor.py`**: Samples colors from these detected regions to build a design palette.
+4.  **`html_generator.py`**: Consumes the region data and color palette to construct the semantic HTML markup.
+5.  **`output_writer.py`**: Writes the final HTML and associated CSS into the specified output file path.
 
 ```mermaid
-graph TD
-    A[JSON Design Spec] --> B(main.py: parse_design_spec);
-    B --> C{Data Processing};
-    C --> D[layout_detector.py];
-    C --> E[color_extractor.py];
-    C --> F[image_loader.py];
-    D & E & F --> G(HTML Generator);
-    D & E & F --> H(CSS Generator);
-    D & E & F --> I(JS Generator);
-    G --> J[index.html];
-    H --> K[style.css];
-    I --> L[script.js];
-    J & K & L --> M(output_writer.py);
+graph LR
+    A[Input Image (PNG/JPG)] --> B(image_loader.py);
+    B --> C{layout_detector.py};
+    C --> D[Detected Regions];
+    B --> E(color_extractor.py);
+    D & E --> F(html_generator.py);
+    F --> G(output_writer.py);
+    G --> H[Output HTML/CSS];
 ```
 
 ## API Reference
 
-### `parse_design_spec(json_file: str) -> dict`
-Reads and validates the JSON design specification file.
-*Returns:* A dictionary containing the fully parsed design structure.
+### `design2web.main.convert_design(image_path: str) -> str`
+The primary entry point. Reads the image, runs the full pipeline, and returns the path to the generated HTML file.
 
-### `generate_html(spec: dict) -> str`
-Generates the complete HTML content string based on the specification.
-*Example:*
+**Example:**
 ```python
-html = generate_html(design_data)
-# html contains <html>...</html>
+path = convert_design("my_design.png")
+# path will be the string path to the output file
 ```
 
-### `generate_css(spec: dict) -> str`
-Generates the complete CSS content string, applying layout and styling rules.
-*Example:*
-```python
-css = generate_css(design_data)
-# css contains body { ... }
-```
+### `design2web.layout_detector.detect_layout_regions(image: Image.Image) -> list`
+Identifies bounding boxes for major UI components.
+
+**Signature:** `detect_layout_regions(image: Image.Image) -> list`
+**Returns:** A list of region objects/dictionaries.
 
 ## Research Background
 
-This tool is inspired by the growing need for low-code/no-code solutions, specifically targeting the friction point where design artifacts (like Figma exports) must be manually translated into code. While the current implementation relies on a rigid JSON schema, the underlying concepts draw from automated UI generation research, particularly those focusing on declarative UI specifications.
+This project is inspired by the growing field of visual programming and automated UI generation. The core methodology relies on classical image processing techniques (thresholding, contour detection) to approximate semantic structure, drawing conceptual parallels to early computer vision applications in document analysis.
+
+For more advanced, production-ready solutions, research into multimodal large language models (e.g., GPT-4V) or structured design API integrations (e.g., Figma API) is recommended, as they provide superior semantic understanding over raster analysis.
 
 ## Testing
 
-The project includes 8 dedicated test files located in the `tests/` directory, ensuring that the parsing and generation logic behaves as expected against various mock design specifications.
+The project includes 8 dedicated test files located in the `tests/` directory, utilizing `pytest` fixtures to ensure the integrity of the pipeline components.
 
 ## Contributing
 
-We welcome contributions! Please see our contribution guidelines (if available) or feel free to open an issue or submit a Pull Request.
+Contributions are welcome! If you find bugs, have suggestions for improvement, or wish to enhance the layout detection algorithms, please feel free to open an issue or submit a pull request.
 
 ## Citation
 
-This project is an independent implementation and does not directly cite specific academic works, but it builds upon the general principles of declarative UI specification.
+This project is a proof-of-concept and does not cite specific academic papers for its basic image processing implementation, relying instead on standard libraries.
 
 ## License
 The project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
