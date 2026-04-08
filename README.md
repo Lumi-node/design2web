@@ -33,7 +33,7 @@ pip install design2web
 To convert a design mockup, you would typically use the main entry point function:
 
 ```python
-from design2web.main import convert_design
+from main import convert_design
 
 # Assuming 'mockup.png' is your design file
 output_path = convert_design("mockup.png")
@@ -46,31 +46,36 @@ print(f"HTML generated successfully at: {output_path}")
 The tool analyzes the input image to segment major UI components (e.g., header, sidebar, content area) using basic image processing techniques.
 
 ```python
-from design2web.layout_detector import detect_layout_regions
-from PIL import Image
+from image_loader import load_image
+from layout_detector import detect_layout_regions
 
-img = Image.open("design.jpg")
-regions = detect_layout_regions(img)
-# regions might contain bounding boxes for detected areas
+# Load image as numpy array
+image = load_image("design.jpg")
+
+# Detect layout regions
+regions = detect_layout_regions(image)
+# Returns: {'header': {...}, 'sidebar': {...}, 'content': {...}, 'footer': {...}}
 ```
 
 ### Color Extraction
 It samples dominant color palettes from the identified regions to apply them as CSS variables in the generated output.
 
 ```python
-from design2web.color_extractor import extract_colors
-from PIL import Image
+from image_loader import load_image
+from layout_detector import detect_layout_regions
+from color_extractor import extract_colors
 
-img = Image.open("design.jpg")
-palette = extract_colors(img)
-print(f"Extracted Palette: {palette}")
+image = load_image("design.jpg")
+regions = detect_layout_regions(image)
+palette = extract_colors(image, regions)
+# Returns: {'header': [(r,g,b), (r,g,b), (r,g,b)], 'sidebar': [...], ...}
 ```
 
 ### HTML Generation
 Based on the detected regions and extracted colors, the system constructs a semantic HTML structure, wrapping components in appropriate `div` elements.
 
 ```python
-from design2web.html_generator import generate_html_structure
+from html_generator import generate_html_structure
 
 # Assuming 'regions' from layout detection
 html_content = generate_html_structure(regions)
@@ -100,20 +105,69 @@ graph LR
 
 ## API Reference
 
-### `design2web.main.convert_design(image_path: str) -> str`
+### `main.convert_design(image_path: str) -> str`
 The primary entry point. Reads the image, runs the full pipeline, and returns the path to the generated HTML file.
 
 **Example:**
 ```python
+from main import convert_design
+
 path = convert_design("my_design.png")
 # path will be the string path to the output file
 ```
 
-### `design2web.layout_detector.detect_layout_regions(image: Image.Image) -> list`
-Identifies bounding boxes for major UI components.
+### `layout_detector.detect_layout_regions(image: np.ndarray) -> dict`
+Identifies bounding boxes for major UI components via brightness analysis.
 
-**Signature:** `detect_layout_regions(image: Image.Image) -> list`
-**Returns:** A list of region objects/dictionaries.
+**Signature:** `detect_layout_regions(image: np.ndarray) -> dict`
+
+**Args:**
+- `image` (np.ndarray): Image array of shape (H, W, 3), dtype uint8, RGB 0-255
+
+**Returns:** Dict with keys `'header'`, `'sidebar'`, `'content'`, `'footer'`. Each value is either `None` or a region dict with keys: `'x'`, `'y'`, `'width'`, `'height'`
+
+**Example:**
+```python
+from image_loader import load_image
+from layout_detector import detect_layout_regions
+
+image = load_image("design.jpg")
+regions = detect_layout_regions(image)
+# Returns: {
+#     'header': {'x': 0, 'y': 0, 'width': 800, 'height': 120},
+#     'sidebar': {'x': 0, 'y': 120, 'width': 200, 'height': 480},
+#     'content': {'x': 200, 'y': 120, 'width': 600, 'height': 480},
+#     'footer': {'x': 0, 'y': 600, 'width': 800, 'height': 100}
+# }
+```
+
+### `color_extractor.extract_colors(image: np.ndarray, regions: dict) -> dict`
+Extracts 3 dominant colors from each detected region via k-means clustering.
+
+**Signature:** `extract_colors(image: np.ndarray, regions: dict) -> dict`
+
+**Args:**
+- `image` (np.ndarray): Image array of shape (H, W, 3), dtype uint8, RGB 0-255
+- `regions` (dict): Output from `detect_layout_regions()` with keys `'header'`, `'sidebar'`, `'content'`, `'footer'`
+
+**Returns:** Dict mapping region names to lists of exactly 3 RGB tuples. Only includes regions that were detected (non-None in input).
+
+**Example:**
+```python
+from image_loader import load_image
+from layout_detector import detect_layout_regions
+from color_extractor import extract_colors
+
+image = load_image("design.jpg")
+regions = detect_layout_regions(image)
+colors = extract_colors(image, regions)
+# Returns: {
+#     'header': [(255, 0, 0), (0, 255, 0), (0, 0, 255)],
+#     'sidebar': [(200, 100, 50), ...],
+#     'content': [...],
+#     'footer': [...]
+# }
+```
 
 ## Research Background
 
